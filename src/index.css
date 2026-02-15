@@ -86,5 +86,63 @@ button.primary:hover {
   font-weight: 500;
 }
 
-.badge-expense { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
-.badge-income { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+.badge-expense {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+.badge-income {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+}
+
+/* Responsive Styles */
+.mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 1024px) {
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  .sidebar {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    box-shadow: 20px 0 50px rgba(0, 0, 0, 0.1);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  main {
+    padding: 1.5rem !important;
+    width: 100%;
+  }
+
+  .app-container {
+    flex-direction: column;
+  }
+
+  header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1.5rem;
+  }
+
+  .search-container {
+    width: 100% !important;
+  }
+
+  .search-container input {
+    width: 100% !important;
+  }
+}

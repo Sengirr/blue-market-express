@@ -11,7 +11,9 @@ import {
   Download,
   Sun,
   Moon,
-  Search
+  Search,
+  Menu,
+  X
 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import { DashboardView } from './components/Dashboard'
@@ -22,6 +24,7 @@ import { BudgetsView } from './components/Budgets'
 import { ProductModal } from './components/ProductModal'
 import { SupplierModal } from './components/SupplierModal'
 import { BudgetModal } from './components/BudgetModal'
+import { TransactionForm } from './components/TransactionForm'
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -32,6 +35,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   // Data State
   const [transactions, setTransactions] = useState([])
@@ -260,32 +264,61 @@ function App() {
 
   return (
     <div className="app-container" style={{ display: 'flex', width: '100%', minHeight: '100vh', backgroundColor: 'var(--background)' }}>
+      {/* Sidebar Overlay for Mobile */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="sidebar-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 40,
+            backdropFilter: 'blur(4px)'
+          }}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside style={{
-        width: '280px',
-        borderRight: '1px solid var(--border)',
-        padding: '2rem 1.5rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '2rem',
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        backgroundColor: 'var(--surface)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            backgroundColor: 'var(--primary)',
-            borderRadius: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Wallet size={24} color="white" />
+      <aside
+        className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
+        style={{
+          width: '280px',
+          borderRight: '1px solid var(--border)',
+          padding: '2rem 1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '2rem',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          backgroundColor: 'var(--surface)',
+          zIndex: 50,
+          transition: 'transform 0.3s ease-in-out'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              backgroundColor: 'var(--primary)',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Wallet size={24} color="white" />
+            </div>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Blue Market ERP</h1>
           </div>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Blue Market ERP</h1>
+          <button
+            className="mobile-only"
+            onClick={() => setIsSidebarOpen(false)}
+            style={{ padding: '0.5rem', background: 'transparent', color: 'var(--text-muted)' }}
+          >
+            <X size={24} />
+          </button>
         </div>
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
@@ -293,13 +326,13 @@ function App() {
             icon={<LayoutDashboard size={20} />}
             label="Contabilidad"
             active={activeTab === 'dashboard'}
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}
           />
           <NavItem
             icon={<Receipt size={20} />}
             label="Transacciones"
             active={activeTab === 'transactions'}
-            onClick={() => setActiveTab('transactions')}
+            onClick={() => { setActiveTab('transactions'); setIsSidebarOpen(false); }}
           />
           <div style={{ margin: '1rem 0 0.5rem 0', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, paddingLeft: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Operaciones
@@ -308,33 +341,43 @@ function App() {
             icon={<Package size={20} />}
             label="Inventario"
             active={activeTab === 'inventory'}
-            onClick={() => setActiveTab('inventory')}
+            onClick={() => { setActiveTab('inventory'); setIsSidebarOpen(false); }}
           />
           <NavItem
             icon={<Users size={20} />}
             label="Proveedores"
             active={activeTab === 'suppliers'}
-            onClick={() => setActiveTab('suppliers')}
+            onClick={() => { setActiveTab('suppliers'); setIsSidebarOpen(false); }}
           />
           <NavItem
             icon={<Target size={20} />}
             label="Presupuestos"
             active={activeTab === 'budgets'}
-            onClick={() => setActiveTab('budgets')}
+            onClick={() => { setActiveTab('budgets'); setIsSidebarOpen(false); }}
           />
         </nav>
       </aside>
 
       {/* Main Content */}
-      <main style={{ flex: 1, padding: '2rem 3rem', overflowY: 'auto' }}>
-        <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h2 style={{ fontSize: '1.875rem', fontWeight: 700 }}>{getPageTitle()}</h2>
-            <p style={{ color: 'var(--text-muted)' }}>Blue Market Supermarket Management System</p>
+      <main style={{ flex: 1, padding: '2rem 3rem', overflowY: 'auto' }} className="main-content">
+        <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button
+              className="mobile-only"
+              onClick={() => setIsSidebarOpen(true)}
+              style={{ padding: '0.75rem', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 'var(--radius)' }}
+            >
+              <Menu size={24} />
+            </button>
+            <div>
+              <h2 style={{ fontSize: '1.875rem', fontWeight: 700 }}>{getPageTitle()}</h2>
+              <p style={{ color: 'var(--text-muted)' }} className="desktop-only">Blue Market Supermarket Management System</p>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
             {activeTab !== 'dashboard' && activeTab !== 'budgets' && (
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative' }} className="search-container">
                 <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input
                   type="text"
@@ -345,37 +388,43 @@ function App() {
                 />
               </div>
             )}
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              style={{ padding: '0.75rem', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 'var(--radius)' }}
-            >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-            {(activeTab === 'transactions' || activeTab === 'inventory' || activeTab === 'suppliers' || activeTab === 'budgets') && (
+
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                style={{ padding: '0.75rem', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 'var(--radius)' }}
+              >
+                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+
+              {(activeTab === 'transactions' || activeTab === 'inventory' || activeTab === 'suppliers' || activeTab === 'budgets') && (
+                <button
+                  onClick={() => {
+                    const exportData = activeTab === 'transactions' ? filteredTransactions : activeTab === 'inventory' ? filteredProducts : activeTab === 'suppliers' ? filteredSuppliers : budgets
+                    exportToCSV(exportData, activeTab)
+                  }}
+                  className="desktop-only"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                >
+                  <Download size={20} />
+                  Exportar CSV
+                </button>
+              )}
+
               <button
                 onClick={() => {
-                  const exportData = activeTab === 'transactions' ? filteredTransactions : activeTab === 'inventory' ? filteredProducts : activeTab === 'suppliers' ? filteredSuppliers : budgets
-                  exportToCSV(exportData, activeTab)
+                  if (activeTab === 'inventory') setProductModal({ show: true, initialData: null })
+                  else if (activeTab === 'suppliers') setSupplierModal({ show: true, initialData: null })
+                  else if (activeTab === 'budgets') setBudgetModal({ show: true, initialData: null })
+                  else setShowForm(true)
                 }}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                className="primary"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem' }}
               >
-                <Download size={20} />
-                Exportar CSV
+                <Plus size={20} />
+                <span className="desktop-only">Acción Rápida</span>
               </button>
-            )}
-            <button
-              onClick={() => {
-                if (activeTab === 'inventory') setProductModal({ show: true, initialData: null })
-                else if (activeTab === 'suppliers') setSupplierModal({ show: true, initialData: null })
-                else if (activeTab === 'budgets') setBudgetModal({ show: true, initialData: null })
-                else setShowForm(true)
-              }}
-              className="primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem' }}
-            >
-              <Plus size={20} />
-              Acción Rápida
-            </button>
+            </div>
           </div>
         </header>
 
