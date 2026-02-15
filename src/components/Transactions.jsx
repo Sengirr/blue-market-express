@@ -39,7 +39,7 @@ export function TransactionsView({ transactions }) {
                                     fontWeight: 600,
                                     color: t.type === 'income' ? 'var(--success)' : 'var(--danger)'
                                 }}>
-                                    {t.type === 'income' ? '+' : '-'}${Number(t.amount).toLocaleString()}
+                                    {t.type === 'income' ? '+' : '-'}{Number(t.amount).toLocaleString()}€
                                 </td>
                             </tr>
                         ))

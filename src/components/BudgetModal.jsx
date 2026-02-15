@@ -120,7 +120,7 @@ export function BudgetModal({ onClose, onSave, categories, initialData }) {
                             style={{ width: '100%', padding: '0.75rem', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'white' }}
                             value={formData.amount}
                             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                            placeholder="0.00"
+                            placeholder="0,00 €"
                         />
                     </div>
 

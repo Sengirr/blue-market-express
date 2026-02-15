@@ -1,5 +1,5 @@
 import React from 'react'
-import { TrendingUp, TrendingDown, Target as TargetIcon, Calendar, User, DollarSign } from 'lucide-react'
+import { TrendingUp, TrendingDown, Target as TargetIcon, Calendar, User, Euro } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
 export function DashboardView({ stats, chartData, budgets, transactions, sales }) {
@@ -42,19 +42,19 @@ export function DashboardView({ stats, chartData, budgets, transactions, sales }
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
                 <StatCard
                     label="Beneficio Neto"
-                    value={`$${stats.profit.toLocaleString()}`}
+                    value={`${stats.profit.toLocaleString()}€`}
                     trend="+12.5%"
                     icon={<TrendingUp color="var(--success)" />}
                 />
                 <StatCard
                     label="Gastos Totales"
-                    value={`$${stats.expenses.toLocaleString()}`}
+                    value={`${stats.expenses.toLocaleString()}€`}
                     trend="-2.4%"
                     icon={<TrendingDown color="var(--danger)" />}
                 />
                 <StatCard
                     label="Ingresos (Caja + Otros)"
-                    value={`$${stats.income.toLocaleString()}`}
+                    value={`${stats.income.toLocaleString()}€`}
                     trend="+8.1%"
                     icon={<TrendingUp color="var(--success)" />}
                 />
@@ -80,7 +80,7 @@ export function DashboardView({ stats, chartData, budgets, transactions, sales }
                                     fontSize={12}
                                     tickLine={false}
                                     axisLine={false}
-                                    tickFormatter={(value) => `$${value}`}
+                                    tickFormatter={(value) => `${value}€`}
                                 />
                                 <Tooltip
                                     contentStyle={{
@@ -117,7 +117,7 @@ export function DashboardView({ stats, chartData, budgets, transactions, sales }
                                         <Calendar size={14} color="var(--text-muted)" />
                                         <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{new Date(s.date).toLocaleDateString()}</span>
                                     </div>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--success)', fontWeight: 600 }}>+${Number(s.amount).toLocaleString()}</div>
+                                    <div style={{ fontSize: '0.875rem', color: 'var(--success)', fontWeight: 600 }}>+{Number(s.amount).toLocaleString()}€</div>
                                 </div>
                             ))
                         )}
@@ -156,7 +156,7 @@ export function DashboardView({ stats, chartData, budgets, transactions, sales }
                                     }} />
                                 </div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>
-                                    ${current.toLocaleString()} / ${Number(b.amount).toLocaleString()}
+                                    {current.toLocaleString()}€ / {Number(b.amount).toLocaleString()}€
                                 </div>
                             </div>
                         )

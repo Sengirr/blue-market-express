@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, DollarSign } from 'lucide-react'
+import { X, Euro } from 'lucide-react'
 
 export function SalesModal({ onClose, onSave, initialData }) {
     const [formData, setFormData] = useState(initialData || {
@@ -51,7 +51,7 @@ export function SalesModal({ onClose, onSave, initialData }) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-muted)' }}>Monto Total</label>
                         <div style={{ position: 'relative' }}>
-                            <DollarSign size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <Euro size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                             <input
                                 required
                                 type="number"

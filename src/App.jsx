@@ -69,15 +69,20 @@ function App() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const { data: catData } = await supabase.from('blue_market.categories').select('*').order('name')
-      const { data: transData } = await supabase
+      const { data: catData, error: catError } = await supabase.from('blue_market.categories').select('*').order('name')
+      const { data: transData, error: transError } = await supabase
         .from('blue_market.transactions')
         .select(`*, categories: category_id(*)`)
         .order('date', { ascending: false })
-      const { data: suppData } = await supabase.from('blue_market.suppliers').select('*').order('name')
-      const { data: budgetData } = await supabase.from('blue_market.targets').select('*').order('year', { ascending: false }).order('month', { ascending: false })
-      const { data: salesData } = await supabase.from('blue_market.daily_sales').select('*').order('date', { ascending: false })
-      const { data: empData } = await supabase.from('blue_market.employees').select('*').order('name')
+      const { data: suppData, error: suppError } = await supabase.from('blue_market.suppliers').select('*').order('name')
+      const { data: budgetData, error: budgetError } = await supabase.from('blue_market.targets').select('*').order('year', { ascending: false }).order('month', { ascending: false })
+      const { data: salesData, error: salesError } = await supabase.from('blue_market.daily_sales').select('*').order('date', { ascending: false })
+      const { data: empData, error: empError } = await supabase.from('blue_market.employees').select('*').order('name')
+
+      if (catError || transError || suppError || budgetError || salesError || empError) {
+        console.error('Error fetching data:', { catError, transError, suppError, budgetError, salesError, empError })
+        alert('Error al cargar datos de la base de datos.')
+      }
 
       setCategories(catData || [])
       setTransactions(transData || [])
@@ -89,7 +94,8 @@ function App() {
       calculateStats(transData || [], salesData || [])
       processChartData(transData || [], salesData || [])
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error('Unexpected error:', error)
+      alert('Error inesperado al conectar con Supabase.')
     } finally {
       setLoading(false)
     }
@@ -149,11 +155,16 @@ function App() {
 
   const handleSaveSale = async (formData) => {
     const isEditing = !!formData.id
-    if (isEditing) {
-      await supabase.from('blue_market.daily_sales').update(formData).eq('id', formData.id)
-    } else {
-      await supabase.from('blue_market.daily_sales').insert([formData])
+    const { error } = isEditing
+      ? await supabase.from('blue_market.daily_sales').update(formData).eq('id', formData.id)
+      : await supabase.from('blue_market.daily_sales').insert([formData])
+
+    if (error) {
+      alert('Error saving sale: ' + error.message)
+      console.error(error)
+      return
     }
+
     setSalesModal({ show: false, initialData: null })
     fetchData()
   }
@@ -165,11 +176,16 @@ function App() {
 
   const handleSaveEmployee = async (formData) => {
     const isEditing = !!formData.id
-    if (isEditing) {
-      await supabase.from('blue_market.employees').update(formData).eq('id', formData.id)
-    } else {
-      await supabase.from('blue_market.employees').insert([formData])
+    const { error } = isEditing
+      ? await supabase.from('blue_market.employees').update(formData).eq('id', formData.id)
+      : await supabase.from('blue_market.employees').insert([formData])
+
+    if (error) {
+      alert('Error saving employee: ' + error.message)
+      console.error(error)
+      return
     }
+
     setEmployeeModal({ show: false, initialData: null })
     fetchData()
   }
@@ -232,18 +248,18 @@ function App() {
   }
 
   const filteredTransactions = transactions.filter(t =>
-    t.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.categories?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    (t.description?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (t.categories?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   )
 
   const filteredSuppliers = suppliers.filter(s =>
-    s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.contact_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    (s.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (s.contact_name?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   )
 
   const filteredEmployees = employees.filter(e =>
-    e.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+    (e.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (e.phone?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   )
 
   const renderContent = () => {

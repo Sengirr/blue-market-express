@@ -24,7 +24,7 @@ export function DailySalesView({ sales, onAddSale, onEditSale, onDeleteSale }) {
                 </div>
                 <div>
                     <p style={{ fontSize: '0.875rem', opacity: 0.9 }}>Total Ventas (Periodo)</p>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 700 }}>${totalSales.toLocaleString()}</h2>
+                    <h2 style={{ fontSize: '2rem', fontWeight: 700 }}>{totalSales.toLocaleString()}€</h2>
                 </div>
             </div>
 
@@ -58,7 +58,7 @@ export function DailySalesView({ sales, onAddSale, onEditSale, onDeleteSale }) {
                                         {s.notes || '-'}
                                     </td>
                                     <td style={{ padding: '1rem', fontWeight: 600, color: 'var(--success)' }}>
-                                        ${Number(s.amount).toLocaleString()}
+                                        {Number(s.amount).toLocaleString()}€
                                     </td>
                                     <td style={{ padding: '1rem', textAlign: 'right' }}>
                                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
