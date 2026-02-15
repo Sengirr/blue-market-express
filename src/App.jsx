@@ -325,7 +325,18 @@ function App() {
           onDeleteSupplier={handleDeleteSupplier}
         />
       )
-      default: return <DashboardView stats={stats} chartData={chartData} transactions={transactions} sales={dailySales} />
+      default: return (
+        <DashboardView
+          stats={stats}
+          chartData={chartData}
+          transactions={transactions}
+          sales={dailySales}
+          selectedYear={selectedYear}
+          selectedMonth={selectedMonth}
+          onYearChange={setSelectedYear}
+          onMonthChange={setSelectedMonth}
+        />
+      )
     }
   }
 

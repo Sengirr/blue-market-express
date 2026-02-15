@@ -6,6 +6,7 @@ export function DashboardView({
     stats,
     chartData,
     sales,
+    transactions,
     selectedYear,
     selectedMonth,
     onYearChange,
