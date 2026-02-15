@@ -26,11 +26,7 @@ import { DailySalesView } from './components/DailySales'
 import { SalesModal } from './components/SalesModal'
 import { EmployeesView } from './components/Employees'
 import { EmployeeModal } from './components/EmployeeModal'
-import { TransactionForm } from './components/TransactionForm'
-import { DailySalesView } from './components/DailySales'
-import { SalesModal } from './components/SalesModal'
-import { EmployeesView } from './components/Employees'
-import { EmployeeModal } from './components/EmployeeModal'
+import { SupplierModal } from './components/SupplierModal'
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -209,11 +205,6 @@ function App() {
     fetchData()
   }
 
-  const handleDeleteSupplier = async (id) => {
-    await supabase.from('suppliers').delete().eq('id', id)
-    fetchData()
-  }
-
   const exportToCSV = (data, filename) => {
     if (!data || data.length === 0) return
     const headers = Object.keys(data[0]).join(',')
@@ -267,6 +258,14 @@ function App() {
           onAddEmployee={() => setEmployeeModal({ show: true, initialData: null })}
           onEditEmployee={(e) => setEmployeeModal({ show: true, initialData: e })}
           onDeleteEmployee={handleDeleteEmployee}
+        />
+      )
+      case 'suppliers': return (
+        <SuppliersView
+          suppliers={filteredSuppliers}
+          onAddSupplier={() => setSupplierModal({ show: true, initialData: null })}
+          onEditSupplier={(s) => setSupplierModal({ show: true, initialData: s })}
+          onDeleteSupplier={handleDeleteSupplier}
         />
       )
       default: return <DashboardView stats={stats} chartData={chartData} transactions={transactions} sales={dailySales} />
@@ -419,7 +418,7 @@ function App() {
                 {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
 
-              {(activeTab === 'sales' || activeTab === 'transactions' || activeTab === 'employees' || activeTab === 'suppliers' || activeTab === 'budgets') && (
+              {(activeTab === 'sales' || activeTab === 'transactions' || activeTab === 'employees' || activeTab === 'suppliers') && (
                 <button
                   onClick={() => {
                     const exportData = activeTab === 'sales' ? dailySales : activeTab === 'transactions' ? filteredTransactions : activeTab === 'employees' ? filteredEmployees : filteredSuppliers
@@ -496,6 +495,5 @@ function NavItem({ icon, label, active, onClick }) {
     </div>
   )
 }
-
 
 export default App
