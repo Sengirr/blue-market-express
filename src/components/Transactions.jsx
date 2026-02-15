@@ -2,10 +2,14 @@ import React from 'react'
 
 export function TransactionsView({ transactions }) {
     return (
-        <div className="card">
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Historial de Gastos</h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Registro detallado de salidas de dinero</p>
+            </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                    <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                    <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)', background: 'var(--surface-hover)' }}>
                         <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Fecha</th>
                         <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Descripción</th>
                         <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Categoría</th>
@@ -15,8 +19,8 @@ export function TransactionsView({ transactions }) {
                 <tbody>
                     {transactions.length === 0 ? (
                         <tr>
-                            <td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                No hay transacciones registradas.
+                            <td colSpan="4" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                No hay gastos registrados.
                             </td>
                         </tr>
                     ) : (
