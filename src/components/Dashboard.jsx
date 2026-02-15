@@ -20,7 +20,15 @@ export function DashboardView({
         })
         .slice(0, 5)
 
-    const years = [2013, 2024, 2025, 2026]
+    const allDates = [
+        ...(sales || []).map(s => new Date(s.date)),
+        ...(transactions || []).map(t => new Date(t.date))
+    ]
+    const years = Array.from(new Set(allDates.map(d => d.getFullYear())))
+        .filter(y => !isNaN(y))
+        .sort((a, b) => b - a)
+
+    if (years.length === 0) years.push(new Date().getFullYear())
     const months = [
         { val: 'all', label: 'Todos los meses' },
         { val: 0, label: 'Enero' }, { val: 1, label: 'Febrero' }, { val: 2, label: 'Marzo' },

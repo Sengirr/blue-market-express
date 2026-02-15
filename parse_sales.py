@@ -8,7 +8,7 @@ months = {
 }
 
 try:
-    with open('historical_sales.txt', 'r', encoding='utf-8') as f:
+    with open('historical_sales_2014.txt', 'r', encoding='utf-8') as f:
         lines = f.readlines()
 except FileNotFoundError:
     print("File not found")
@@ -36,16 +36,16 @@ for line in lines:
         # Format amount (replace comma with dot for SQL)
         formatted_amount = amount_str.replace(',', '.')
         
-        values.append(f"('{formatted_date}', {formatted_amount}, 'Caja Histórica 2013')")
+        values.append(f"('{formatted_date}', {formatted_amount}, 'Caja Histórica 2014')")
 
 if values:
-    with open('daily_sales_import.sql', 'w', encoding='utf-8') as out:
+    with open('daily_sales_import_2014.sql', 'w', encoding='utf-8') as out:
         batch_size = 50
         for i in range(0, len(values), batch_size):
             batch = values[i:i+batch_size]
             sql = f"INSERT INTO public.daily_sales (date, amount, notes) VALUES\n" + ",\n".join(batch) + ";"
             out.write(f"-- BATCH {i//batch_size + 1}\n")
             out.write(sql + "\n\n")
-    print("SQL written to daily_sales_import.sql")
+    print("SQL written to daily_sales_import_2014.sql")
 else:
     print("No data parsed")
