@@ -1,15 +1,46 @@
 import React, { useState, useEffect } from 'react'
-import { LayoutDashboard, Receipt, TrendingUp, TrendingDown, Plus, Wallet, Loader2 } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Receipt,
+  Plus,
+  Wallet,
+  Loader2,
+  Package,
+  Users,
+  Target,
+  Download,
+  Sun,
+  Moon,
+  Search
+} from 'lucide-react'
 import { supabase } from './lib/supabase'
 import { DashboardView } from './components/Dashboard'
-import { TransactionForm } from './components/TransactionForm'
+import { TransactionsView } from './components/Transactions'
+import { InventoryView } from './components/Inventory'
+import { SuppliersView } from './components/Suppliers'
+import { BudgetsView } from './components/Budgets'
+import { ProductModal } from './components/ProductModal'
+import { SupplierModal } from './components/SupplierModal'
+import { BudgetModal } from './components/BudgetModal'
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [showForm, setShowForm] = useState(false)
+  const [productModal, setProductModal] = useState({ show: false, initialData: null })
+  const [supplierModal, setSupplierModal] = useState({ show: false, initialData: null })
+  const [budgetModal, setBudgetModal] = useState({ show: false, initialData: null })
   const [loading, setLoading] = useState(true)
+  const [isDarkMode, setIsDarkMode] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+
+  // Data State
   const [transactions, setTransactions] = useState([])
   const [categories, setCategories] = useState([])
+  const [products, setProducts] = useState([])
+  const [suppliers, setSuppliers] = useState([])
+  const [budgets, setBudgets] = useState([])
+
+  // Stats State
   const [stats, setStats] = useState({ profit: 0, expenses: 0, income: 0 })
   const [chartData, setChartData] = useState([])
 
@@ -17,20 +48,35 @@ function App() {
     fetchData()
   }, [])
 
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.add('dark-theme')
+    } else {
+      document.body.classList.remove('dark-theme')
+    }
+  }, [isDarkMode])
+
   const fetchData = async () => {
     setLoading(true)
     try {
-      const { data: catData, error: catError } = await supabase.from('blue_market.categories').select('*')
-      if (catError) throw catError
-
-      const { data: transData, error: transError } = await supabase
+      const { data: catData } = await supabase.from('blue_market.categories').select('*').order('name')
+      const { data: transData } = await supabase
         .from('blue_market.transactions')
-        .select(`*, categories:category_id (*)`)
+        .select(`*, categories: category_id(*)`)
         .order('date', { ascending: false })
-      if (transError) throw transError
+      const { data: prodData } = await supabase
+        .from('blue_market.products')
+        .select(`*, categories: category_id(*), suppliers: supplier_id(*)`)
+        .order('name')
+      const { data: suppData } = await supabase.from('blue_market.suppliers').select('*').order('name')
+      const { data: budgetData } = await supabase.from('blue_market.targets').select('*').order('year', { ascending: false }).order('month', { ascending: false })
 
       setCategories(catData || [])
       setTransactions(transData || [])
+      setProducts(prodData || [])
+      setSuppliers(suppData || [])
+      setBudgets(budgetData || [])
+
       calculateStats(transData || [])
       processChartData(transData || [])
     } catch (error) {
@@ -83,6 +129,66 @@ function App() {
     }
   }
 
+  const handleSaveProduct = async (formData) => {
+    const isEditing = !!formData.id
+    if (isEditing) {
+      await supabase.from('blue_market.products').update(formData).eq('id', formData.id)
+    } else {
+      await supabase.from('blue_market.products').insert([formData])
+    }
+    setProductModal({ show: false, initialData: null })
+    fetchData()
+  }
+
+  const handleDeleteProduct = async (id) => {
+    await supabase.from('blue_market.products').delete().eq('id', id)
+    fetchData()
+  }
+
+  const handleSaveSupplier = async (formData) => {
+    const isEditing = !!formData.id
+    if (isEditing) {
+      await supabase.from('blue_market.suppliers').update(formData).eq('id', formData.id)
+    } else {
+      await supabase.from('blue_market.suppliers').insert([formData])
+    }
+    setSupplierModal({ show: false, initialData: null })
+    fetchData()
+  }
+
+  const handleDeleteSupplier = async (id) => {
+    await supabase.from('blue_market.suppliers').delete().eq('id', id)
+    fetchData()
+  }
+
+  const handleSaveBudget = async (formData) => {
+    const isEditing = !!formData.id
+    if (isEditing) {
+      await supabase.from('blue_market.targets').update(formData).eq('id', formData.id)
+    } else {
+      await supabase.from('blue_market.targets').insert([formData])
+    }
+    setBudgetModal({ show: false, initialData: null })
+    fetchData()
+  }
+
+  const handleDeleteBudget = async (id) => {
+    await supabase.from('blue_market.targets').delete().eq('id', id)
+    fetchData()
+  }
+
+  const exportToCSV = (data, filename) => {
+    if (!data || data.length === 0) return
+    const headers = Object.keys(data[0]).join(',')
+    const rows = data.map(item => Object.values(item).map(val => `"${val}"`).join(','))
+    const csvContent = [headers, ...rows].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `${filename}.csv`
+    link.click()
+  }
+
   if (loading && transactions.length === 0) {
     return (
       <div style={{ width: '100%', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -91,8 +197,69 @@ function App() {
     )
   }
 
+  const filteredTransactions = transactions.filter(t =>
+    t.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.categories?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const filteredProducts = products.filter(p =>
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const filteredSuppliers = suppliers.filter(s =>
+    s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.contact_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard': return <DashboardView stats={stats} chartData={chartData} products={products} budgets={budgets} transactions={transactions} />
+      case 'transactions': return <TransactionsView transactions={filteredTransactions} />
+      case 'inventory': return (
+        <InventoryView
+          products={filteredProducts}
+          categories={categories.filter(c => c.type === 'expense')}
+          suppliers={suppliers}
+          onAddProduct={() => setProductModal({ show: true, initialData: null })}
+          onEditProduct={(p) => setProductModal({ show: true, initialData: p })}
+          onDeleteProduct={handleDeleteProduct}
+        />
+      )
+      case 'suppliers': return (
+        <SuppliersView
+          suppliers={filteredSuppliers}
+          onAddSupplier={() => setSupplierModal({ show: true, initialData: null })}
+          onEditSupplier={(s) => setSupplierModal({ show: true, initialData: s })}
+          onDeleteSupplier={handleDeleteSupplier}
+        />
+      )
+      case 'budgets': return (
+        <BudgetsView
+          budgets={budgets}
+          transactions={transactions}
+          onAddBudget={() => setBudgetModal({ show: true, initialData: null })}
+          onEditBudget={(b) => setBudgetModal({ show: true, initialData: b })}
+          onDeleteBudget={handleDeleteBudget}
+        />
+      )
+      default: return <DashboardView stats={stats} chartData={chartData} products={products} budgets={budgets} transactions={transactions} />
+    }
+  }
+
+  const getPageTitle = () => {
+    switch (activeTab) {
+      case 'dashboard': return 'Panel de Control'
+      case 'transactions': return 'Historial de Transacciones'
+      case 'inventory': return 'Gestión de Inventario'
+      case 'suppliers': return 'Proveedores'
+      case 'budgets': return 'Presupuestos y Metas'
+      default: return ''
+    }
+  }
+
   return (
-    <div className="app-container" style={{ display: 'flex', width: '100%', minHeight: '100vh' }}>
+    <div className="app-container" style={{ display: 'flex', width: '100%', minHeight: '100vh', backgroundColor: 'var(--background)' }}>
       {/* Sidebar */}
       <aside style={{
         width: '280px',
@@ -103,7 +270,8 @@ function App() {
         gap: '2rem',
         position: 'sticky',
         top: 0,
-        height: '100vh'
+        height: '100vh',
+        backgroundColor: 'var(--surface)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
@@ -117,13 +285,13 @@ function App() {
           }}>
             <Wallet size={24} color="white" />
           </div>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Blue Market</h1>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Blue Market ERP</h1>
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           <NavItem
             icon={<LayoutDashboard size={20} />}
-            label="Dashboard"
+            label="Contabilidad"
             active={activeTab === 'dashboard'}
             onClick={() => setActiveTab('dashboard')}
           />
@@ -133,6 +301,27 @@ function App() {
             active={activeTab === 'transactions'}
             onClick={() => setActiveTab('transactions')}
           />
+          <div style={{ margin: '1rem 0 0.5rem 0', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, paddingLeft: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Operaciones
+          </div>
+          <NavItem
+            icon={<Package size={20} />}
+            label="Inventario"
+            active={activeTab === 'inventory'}
+            onClick={() => setActiveTab('inventory')}
+          />
+          <NavItem
+            icon={<Users size={20} />}
+            label="Proveedores"
+            active={activeTab === 'suppliers'}
+            onClick={() => setActiveTab('suppliers')}
+          />
+          <NavItem
+            icon={<Target size={20} />}
+            label="Presupuestos"
+            active={activeTab === 'budgets'}
+            onClick={() => setActiveTab('budgets')}
+          />
         </nav>
       </aside>
 
@@ -140,26 +329,57 @@ function App() {
       <main style={{ flex: 1, padding: '2rem 3rem', overflowY: 'auto' }}>
         <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ fontSize: '1.875rem', fontWeight: 700 }}>
-              {activeTab === 'dashboard' ? 'Panel de Control' : 'Historial de Transacciones'}
-            </h2>
-            <p style={{ color: 'var(--text-muted)' }}>Contabilidad interna Blue Market</p>
+            <h2 style={{ fontSize: '1.875rem', fontWeight: 700 }}>{getPageTitle()}</h2>
+            <p style={{ color: 'var(--text-muted)' }}>Blue Market Supermarket Management System</p>
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="primary"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem' }}
-          >
-            <Plus size={20} />
-            Nueva Entrada
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            {activeTab !== 'dashboard' && activeTab !== 'budgets' && (
+              <div style={{ position: 'relative' }}>
+                <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{ padding: '0.75rem 1rem 0.75rem 2.75rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'var(--text)', width: '250px' }}
+                />
+              </div>
+            )}
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              style={{ padding: '0.75rem', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 'var(--radius)' }}
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            {(activeTab === 'transactions' || activeTab === 'inventory' || activeTab === 'suppliers' || activeTab === 'budgets') && (
+              <button
+                onClick={() => {
+                  const exportData = activeTab === 'transactions' ? filteredTransactions : activeTab === 'inventory' ? filteredProducts : activeTab === 'suppliers' ? filteredSuppliers : budgets
+                  exportToCSV(exportData, activeTab)
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              >
+                <Download size={20} />
+                Exportar CSV
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (activeTab === 'inventory') setProductModal({ show: true, initialData: null })
+                else if (activeTab === 'suppliers') setSupplierModal({ show: true, initialData: null })
+                else if (activeTab === 'budgets') setBudgetModal({ show: true, initialData: null })
+                else setShowForm(true)
+              }}
+              className="primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem' }}
+            >
+              <Plus size={20} />
+              Acción Rápida
+            </button>
+          </div>
         </header>
 
-        {activeTab === 'dashboard' ? (
-          <DashboardView stats={stats} chartData={chartData} />
-        ) : (
-          <TransactionsView transactions={transactions} />
-        )}
+        {renderContent()}
       </main>
 
       {showForm && (
@@ -167,6 +387,33 @@ function App() {
           onClose={() => setShowForm(false)}
           onSave={handleSaveTransaction}
           categories={categories}
+        />
+      )}
+
+      {productModal.show && (
+        <ProductModal
+          onClose={() => setProductModal({ show: false, initialData: null })}
+          onSave={handleSaveProduct}
+          categories={categories.filter(c => c.type === 'expense')}
+          suppliers={suppliers}
+          initialData={productModal.initialData}
+        />
+      )}
+
+      {supplierModal.show && (
+        <SupplierModal
+          onClose={() => setSupplierModal({ show: false, initialData: null })}
+          onSave={handleSaveSupplier}
+          initialData={supplierModal.initialData}
+        />
+      )}
+
+      {budgetModal.show && (
+        <BudgetModal
+          onClose={() => setBudgetModal({ show: false, initialData: null })}
+          onSave={handleSaveBudget}
+          categories={categories}
+          initialData={budgetModal.initialData}
         />
       )}
     </div>
@@ -186,7 +433,8 @@ function NavItem({ icon, label, active, onClick }) {
         cursor: 'pointer',
         backgroundColor: active ? 'var(--primary-light)' : 'transparent',
         color: active ? 'var(--primary)' : 'var(--text-muted)',
-        transition: 'all 0.2s ease'
+        transition: 'all 0.2s ease',
+        marginBottom: '0.25rem'
       }}>
       {icon}
       <span style={{ fontWeight: 500 }}>{label}</span>
@@ -219,7 +467,7 @@ function TransactionsView({ transactions }) {
                 <td style={{ padding: '1rem', fontSize: '0.9rem' }}>{t.date}</td>
                 <td style={{ padding: '1rem', fontSize: '0.9rem' }}>{t.description || '-'}</td>
                 <td style={{ padding: '1rem' }}>
-                  <span className={`badge badge-${t.type}`}>
+                  <span className={`badge badge - ${t.type} `}>
                     {t.categories?.name || 'Varios'}
                   </span>
                 </td>
