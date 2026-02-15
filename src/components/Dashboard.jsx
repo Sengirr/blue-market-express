@@ -20,7 +20,7 @@ export function DashboardView({
         })
         .slice(0, 5)
 
-    const years = [2013, 2024, 2025, 2026] // Extracted or hardcoded for now based on context
+    const years = [2013, 2024, 2025, 2026]
     const months = [
         { val: 'all', label: 'Todos los meses' },
         { val: 0, label: 'Enero' }, { val: 1, label: 'Febrero' }, { val: 2, label: 'Marzo' },
@@ -28,6 +28,30 @@ export function DashboardView({
         { val: 6, label: 'Julio' }, { val: 7, label: 'Agosto' }, { val: 8, label: 'Septiembre' },
         { val: 9, label: 'Octubre' }, { val: 10, label: 'Noviembre' }, { val: 11, label: 'Diciembre' }
     ]
+
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div style={{
+                    backgroundColor: 'var(--surface)',
+                    padding: '1rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                }}>
+                    <p style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text)' }}>{label}</p>
+                    <p style={{
+                        color: payload[0].value >= 0 ? 'var(--success)' : 'var(--danger)',
+                        fontWeight: 600,
+                        fontSize: '1.1rem'
+                    }}>
+                        {payload[0].value.toLocaleString()}€
+                    </p>
+                </div>
+            )
+        }
+        return null
+    }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -105,7 +129,7 @@ export function DashboardView({
                     <h3 style={{ marginBottom: '2rem', fontSize: '1.25rem', fontWeight: 700 }}>Evolución Financiera {selectedYear}</h3>
                     <div style={{ width: '100%', height: 'calc(100% - 3rem)' }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData}>
+                            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                                 <XAxis
                                     dataKey="month"
@@ -119,18 +143,12 @@ export function DashboardView({
                                     fontSize={12}
                                     tickLine={false}
                                     axisLine={false}
-                                    tickFormatter={(value) => `${value}€`}
+                                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k€`}
                                 />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: 'var(--surface)',
-                                        border: '1px solid var(--border)',
-                                        borderRadius: 'var(--radius)'
-                                    }}
-                                />
-                                <Bar dataKey="net" radius={[4, 4, 0, 0]}>
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--primary-light)', opacity: 0.1 }} />
+                                <Bar dataKey="net" radius={[4, 4, 0, 0]} barSize={40}>
                                     {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.net >= 0 ? 'var(--success)' : 'var(--danger)'} opacity={0.8} />
+                                        <Cell key={`cell-${index}`} fill={entry.net >= 0 ? 'var(--success)' : 'var(--danger)'} />
                                     ))}
                                 </Bar>
                             </BarChart>
