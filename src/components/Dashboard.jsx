@@ -1,38 +1,108 @@
 import React from 'react'
-import { TrendingUp, TrendingDown, Calendar, Euro } from 'lucide-react'
+import { TrendingUp, TrendingDown, Calendar, Euro, Filter } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
-export function DashboardView({ stats, chartData, transactions, sales }) {
-    const recentSales = (sales || []).slice(0, 5)
+export function DashboardView({
+    stats,
+    chartData,
+    sales,
+    selectedYear,
+    selectedMonth,
+    onYearChange,
+    onMonthChange
+}) {
+    const recentSales = (sales || [])
+        .filter(s => {
+            const d = new Date(s.date)
+            const matchYear = d.getFullYear() === Number(selectedYear)
+            const matchMonth = selectedMonth === 'all' ? true : d.getMonth() === Number(selectedMonth)
+            return matchYear && matchMonth
+        })
+        .slice(0, 5)
+
+    const years = [2013, 2024, 2025, 2026] // Extracted or hardcoded for now based on context
+    const months = [
+        { val: 'all', label: 'Todos los meses' },
+        { val: 0, label: 'Enero' }, { val: 1, label: 'Febrero' }, { val: 2, label: 'Marzo' },
+        { val: 3, label: 'Abril' }, { val: 4, label: 'Mayo' }, { val: 5, label: 'Junio' },
+        { val: 6, label: 'Julio' }, { val: 7, label: 'Agosto' }, { val: 8, label: 'Septiembre' },
+        { val: 9, label: 'Octubre' }, { val: 10, label: 'Noviembre' }, { val: 11, label: 'Diciembre' }
+    ]
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Filter Bar */}
+            <div className="card" style={{
+                display: 'flex',
+                gap: '1rem',
+                padding: '1rem 1.5rem',
+                alignItems: 'center',
+                backgroundColor: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)'
+            }}>
+                <Filter size={18} color="var(--primary)" />
+                <span style={{ fontWeight: 600, fontSize: '0.9rem', marginRight: '0.5rem' }}>Filtrar Periodo:</span>
+
+                <select
+                    value={selectedYear}
+                    onChange={(e) => onYearChange(Number(e.target.value))}
+                    style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: '6px',
+                        background: 'var(--background)',
+                        color: 'var(--text)',
+                        border: '1px solid var(--border)'
+                    }}
+                >
+                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+
+                <select
+                    value={selectedMonth}
+                    onChange={(e) => onMonthChange(e.target.value)}
+                    style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: '6px',
+                        background: 'var(--background)',
+                        color: 'var(--text)',
+                        border: '1px solid var(--border)'
+                    }}
+                >
+                    {months.map(m => <option key={m.val} value={m.val}>{m.label}</option>)}
+                </select>
+            </div>
+
             {/* Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }} className="stats-grid">
                 <StatCard
                     label="Beneficio Neto"
                     value={`${stats.profit.toLocaleString()}€`}
-                    trend="+12.5%"
+                    trend={stats.trends?.profit || '0%'}
+                    comparisonText={selectedMonth === 'all' ? 'vs año anterior' : 'vs mes anterior'}
                     icon={<TrendingUp size={20} color="var(--success)" />}
                 />
                 <StatCard
                     label="Gastos Totales"
                     value={`${stats.expenses.toLocaleString()}€`}
-                    trend="-2.4%"
+                    trend={stats.trends?.expenses || '0%'}
+                    comparisonText={selectedMonth === 'all' ? 'vs año anterior' : 'vs mes anterior'}
+                    invertTrend={true}
                     icon={<TrendingDown size={20} color="var(--danger)" />}
                 />
                 <StatCard
                     label="Ingresos (Caja + Otros)"
                     value={`${stats.income.toLocaleString()}€`}
-                    trend="+8.1%"
+                    trend={stats.trends?.income || '0%'}
+                    comparisonText={selectedMonth === 'all' ? 'vs año anterior' : 'vs mes anterior'}
                     icon={<TrendingUp size={20} color="var(--success)" />}
                 />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }} className="charts-grid">
                 {/* Chart */}
                 <div className="card" style={{ height: '400px', padding: '2rem' }}>
-                    <h3 style={{ marginBottom: '2rem', fontSize: '1.25rem', fontWeight: 700 }}>Evolución Financiera</h3>
+                    <h3 style={{ marginBottom: '2rem', fontSize: '1.25rem', fontWeight: 700 }}>Evolución Financiera {selectedYear}</h3>
                     <div style={{ width: '100%', height: 'calc(100% - 3rem)' }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={chartData}>
@@ -71,12 +141,12 @@ export function DashboardView({ stats, chartData, transactions, sales }) {
                 {/* Recent Sales */}
                 <div className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Últimas Cajas</h3>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Cajas del Periodo</h3>
                         <TrendingUp size={18} color="var(--success)" />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {recentSales.length === 0 ? (
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No hay ventas registradas.</p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No hay ventas en este periodo.</p>
                         ) : (
                             recentSales.map(s => (
                                 <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderRadius: '8px', background: 'var(--background)' }}>
@@ -95,7 +165,12 @@ export function DashboardView({ stats, chartData, transactions, sales }) {
     )
 }
 
-function StatCard({ label, value, trend, icon }) {
+function StatCard({ label, value, trend, icon, comparisonText, invertTrend = false }) {
+    const isPositive = trend.startsWith('+')
+    const color = isPositive
+        ? (invertTrend ? 'var(--danger)' : 'var(--success)')
+        : (invertTrend ? 'var(--success)' : 'var(--danger)')
+
     return (
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -109,11 +184,10 @@ function StatCard({ label, value, trend, icon }) {
                 fontSize: '0.875rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.25rem',
-                color: trend.startsWith('+') ? 'var(--success)' : 'var(--danger)'
+                gap: '0.25rem'
             }}>
-                <span style={{ fontWeight: 600 }}>{trend}</span>
-                <span style={{ color: 'var(--text-muted)' }}>vs mes anterior</span>
+                <span style={{ fontWeight: 600, color: color }}>{trend}</span>
+                <span style={{ color: 'var(--text-muted)' }}>{comparisonText}</span>
             </div>
         </div>
     )

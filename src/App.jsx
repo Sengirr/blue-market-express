@@ -38,6 +38,8 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState('all')
 
   // Data State
   const [transactions, setTransactions] = useState([])
@@ -85,8 +87,7 @@ function App() {
       setDailySales(salesData || [])
       setEmployees(empData || [])
 
-      calculateStats(transData || [], salesData || [])
-      processChartData(transData || [], salesData || [])
+      // Initial stats will be calculated by the useEffect below
     } catch (error) {
       console.error('Unexpected error:', error)
       alert('Error inesperado al conectar con Supabase.')
@@ -95,36 +96,81 @@ function App() {
     }
   }
 
-  const calculateStats = (transData, salesData) => {
-    const expenses = transData.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0)
-    const directSales = salesData.reduce((sum, s) => sum + Number(s.amount), 0)
-    const otherIncome = transData.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0)
+  useEffect(() => {
+    if (transactions.length > 0 || dailySales.length > 0) {
+      calculateStats(transactions, dailySales)
+      processChartData(transactions, dailySales)
+    }
+  }, [selectedYear, selectedMonth, transactions, dailySales])
 
-    const income = directSales + otherIncome
+  const calculateStats = (transData, salesData) => {
+    const filterByDate = (items, year, month) => {
+      return items.filter(item => {
+        const d = new Date(item.date)
+        const matchYear = d.getFullYear() === Number(year)
+        const matchMonth = month === 'all' ? true : d.getMonth() === Number(month)
+        return matchYear && matchMonth
+      })
+    }
+
+    const getStatsForPeriod = (tData, sData, year, month) => {
+      const filteredT = filterByDate(tData, year, month)
+      const filteredS = filterByDate(sData, year, month)
+
+      const exp = filteredT.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0)
+      const inc = filteredS.reduce((sum, s) => sum + Number(s.amount), 0) +
+        filteredT.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0)
+
+      return { income: inc, expenses: exp, profit: inc - exp }
+    }
+
+    // Current period stats
+    const current = getStatsForPeriod(transData, salesData, selectedYear, selectedMonth)
+
+    // Previous period for trend
+    let prevYear = selectedYear
+    let prevMonth = selectedMonth
+    if (selectedMonth === 'all') {
+      prevYear = selectedYear - 1
+    } else {
+      if (selectedMonth === 0) {
+        prevYear = selectedYear - 1
+        prevMonth = 11
+      } else {
+        prevMonth = Number(selectedMonth) - 1
+      }
+    }
+    const previous = getStatsForPeriod(transData, salesData, prevYear, prevMonth)
+
+    const calcTrend = (curr, prev) => {
+      if (prev === 0) return curr > 0 ? '+100%' : '0%'
+      const diff = ((curr - prev) / prev) * 100
+      return (diff >= 0 ? '+' : '') + diff.toFixed(1) + '%'
+    }
+
     setStats({
-      income,
-      expenses,
-      profit: income - expenses
+      ...current,
+      trends: {
+        income: calcTrend(current.income, previous.income),
+        expenses: calcTrend(current.expenses, previous.expenses),
+        profit: calcTrend(current.profit, previous.profit)
+      }
     })
   }
 
   const processChartData = (transData, salesData) => {
     const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-    const last6Months = []
-    const now = new Date()
+    const yearData = []
 
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const monthLabel = months[d.getMonth()]
-
+    for (let m = 0; m < 12; m++) {
       const monthTrans = transData.filter(t => {
-        const transDate = new Date(t.date)
-        return transDate.getMonth() === d.getMonth() && transDate.getFullYear() === d.getFullYear()
+        const d = new Date(t.date)
+        return d.getFullYear() === Number(selectedYear) && d.getMonth() === m
       })
 
       const monthSales = salesData.filter(s => {
-        const saleDate = new Date(s.date)
-        return saleDate.getMonth() === d.getMonth() && saleDate.getFullYear() === d.getFullYear()
+        const d = new Date(s.date)
+        return d.getFullYear() === Number(selectedYear) && d.getMonth() === m
       })
 
       const income = monthSales.reduce((sum, s) => sum + Number(s.amount), 0) +
@@ -132,9 +178,9 @@ function App() {
 
       const expenses = monthTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0)
 
-      last6Months.push({ month: monthLabel, net: income - expenses })
+      yearData.push({ month: months[m], net: income - expenses })
     }
-    setChartData(last6Months)
+    setChartData(yearData)
   }
 
   const handleSaveTransaction = async (formData) => {
@@ -242,7 +288,18 @@ function App() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard': return <DashboardView stats={stats} chartData={chartData} transactions={transactions} sales={dailySales} />
+      case 'dashboard': return (
+        <DashboardView
+          stats={stats}
+          chartData={chartData}
+          transactions={transactions}
+          sales={dailySales}
+          selectedYear={selectedYear}
+          selectedMonth={selectedMonth}
+          onYearChange={setSelectedYear}
+          onMonthChange={setSelectedMonth}
+        />
+      )
       case 'sales': return (
         <DailySalesView
           sales={dailySales}
