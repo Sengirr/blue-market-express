@@ -21,9 +21,11 @@ import { supabase } from './lib/supabase'
 import { DashboardView } from './components/Dashboard'
 import { TransactionsView } from './components/Transactions'
 import { SuppliersView } from './components/Suppliers'
-import { BudgetsView } from './components/Budgets'
-import { SupplierModal } from './components/SupplierModal'
-import { BudgetModal } from './components/BudgetModal'
+import { TransactionForm } from './components/TransactionForm'
+import { DailySalesView } from './components/DailySales'
+import { SalesModal } from './components/SalesModal'
+import { EmployeesView } from './components/Employees'
+import { EmployeeModal } from './components/EmployeeModal'
 import { TransactionForm } from './components/TransactionForm'
 import { DailySalesView } from './components/DailySales'
 import { SalesModal } from './components/SalesModal'
@@ -36,7 +38,6 @@ function App() {
   const [salesModal, setSalesModal] = useState({ show: false, initialData: null })
   const [employeeModal, setEmployeeModal] = useState({ show: false, initialData: null })
   const [supplierModal, setSupplierModal] = useState({ show: false, initialData: null })
-  const [budgetModal, setBudgetModal] = useState({ show: false, initialData: null })
   const [loading, setLoading] = useState(true)
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -46,7 +47,6 @@ function App() {
   const [transactions, setTransactions] = useState([])
   const [categories, setCategories] = useState([])
   const [suppliers, setSuppliers] = useState([])
-  const [budgets, setBudgets] = useState([])
   const [dailySales, setDailySales] = useState([])
   const [employees, setEmployees] = useState([])
 
@@ -69,25 +69,23 @@ function App() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const { data: catData, error: catError } = await supabase.from('blue_market.categories').select('*').order('name')
+      const { data: catData, error: catError } = await supabase.from('categories').select('*').order('name')
       const { data: transData, error: transError } = await supabase
-        .from('blue_market.transactions')
+        .from('transactions')
         .select(`*, categories: category_id(*)`)
         .order('date', { ascending: false })
-      const { data: suppData, error: suppError } = await supabase.from('blue_market.suppliers').select('*').order('name')
-      const { data: budgetData, error: budgetError } = await supabase.from('blue_market.targets').select('*').order('year', { ascending: false }).order('month', { ascending: false })
-      const { data: salesData, error: salesError } = await supabase.from('blue_market.daily_sales').select('*').order('date', { ascending: false })
-      const { data: empData, error: empError } = await supabase.from('blue_market.employees').select('*').order('name')
+      const { data: suppData, error: suppError } = await supabase.from('suppliers').select('*').order('name')
+      const { data: salesData, error: salesError } = await supabase.from('daily_sales').select('*').order('date', { ascending: false })
+      const { data: empData, error: empError } = await supabase.from('employees').select('*').order('name')
 
-      if (catError || transError || suppError || budgetError || salesError || empError) {
-        console.error('Error fetching data:', { catError, transError, suppError, budgetError, salesError, empError })
+      if (catError || transError || suppError || salesError || empError) {
+        console.error('Error fetching data:', { catError, transError, suppError, salesError, empError })
         alert('Error al cargar datos de la base de datos.')
       }
 
       setCategories(catData || [])
       setTransactions(transData || [])
       setSuppliers(suppData || [])
-      setBudgets(budgetData || [])
       setDailySales(salesData || [])
       setEmployees(empData || [])
 
@@ -144,7 +142,7 @@ function App() {
   }
 
   const handleSaveTransaction = async (formData) => {
-    const { error } = await supabase.from('blue_market.transactions').insert([formData])
+    const { error } = await supabase.from('transactions').insert([formData])
     if (!error) {
       setShowForm(false)
       fetchData()
@@ -156,8 +154,8 @@ function App() {
   const handleSaveSale = async (formData) => {
     const isEditing = !!formData.id
     const { error } = isEditing
-      ? await supabase.from('blue_market.daily_sales').update(formData).eq('id', formData.id)
-      : await supabase.from('blue_market.daily_sales').insert([formData])
+      ? await supabase.from('daily_sales').update(formData).eq('id', formData.id)
+      : await supabase.from('daily_sales').insert([formData])
 
     if (error) {
       alert('Error saving sale: ' + error.message)
@@ -170,15 +168,15 @@ function App() {
   }
 
   const handleDeleteSale = async (id) => {
-    await supabase.from('blue_market.daily_sales').delete().eq('id', id)
+    await supabase.from('daily_sales').delete().eq('id', id)
     fetchData()
   }
 
   const handleSaveEmployee = async (formData) => {
     const isEditing = !!formData.id
     const { error } = isEditing
-      ? await supabase.from('blue_market.employees').update(formData).eq('id', formData.id)
-      : await supabase.from('blue_market.employees').insert([formData])
+      ? await supabase.from('employees').update(formData).eq('id', formData.id)
+      : await supabase.from('employees').insert([formData])
 
     if (error) {
       alert('Error saving employee: ' + error.message)
@@ -191,39 +189,28 @@ function App() {
   }
 
   const handleDeleteEmployee = async (id) => {
-    await supabase.from('blue_market.employees').delete().eq('id', id)
+    await supabase.from('employees').delete().eq('id', id)
     fetchData()
   }
 
   const handleSaveSupplier = async (formData) => {
     const isEditing = !!formData.id
     if (isEditing) {
-      await supabase.from('blue_market.suppliers').update(formData).eq('id', formData.id)
+      await supabase.from('suppliers').update(formData).eq('id', formData.id)
     } else {
-      await supabase.from('blue_market.suppliers').insert([formData])
+      await supabase.from('suppliers').insert([formData])
     }
     setSupplierModal({ show: false, initialData: null })
     fetchData()
   }
 
   const handleDeleteSupplier = async (id) => {
-    await supabase.from('blue_market.suppliers').delete().eq('id', id)
+    await supabase.from('suppliers').delete().eq('id', id)
     fetchData()
   }
 
-  const handleSaveBudget = async (formData) => {
-    const isEditing = !!formData.id
-    if (isEditing) {
-      await supabase.from('blue_market.targets').update(formData).eq('id', formData.id)
-    } else {
-      await supabase.from('blue_market.targets').insert([formData])
-    }
-    setBudgetModal({ show: false, initialData: null })
-    fetchData()
-  }
-
-  const handleDeleteBudget = async (id) => {
-    await supabase.from('blue_market.targets').delete().eq('id', id)
+  const handleDeleteSupplier = async (id) => {
+    await supabase.from('suppliers').delete().eq('id', id)
     fetchData()
   }
 
@@ -264,7 +251,7 @@ function App() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard': return <DashboardView stats={stats} chartData={chartData} budgets={budgets} transactions={transactions} sales={dailySales} />
+      case 'dashboard': return <DashboardView stats={stats} chartData={chartData} transactions={transactions} sales={dailySales} />
       case 'sales': return (
         <DailySalesView
           sales={dailySales}
@@ -282,24 +269,7 @@ function App() {
           onDeleteEmployee={handleDeleteEmployee}
         />
       )
-      case 'suppliers': return (
-        <SuppliersView
-          suppliers={filteredSuppliers}
-          onAddSupplier={() => setSupplierModal({ show: true, initialData: null })}
-          onEditSupplier={(s) => setSupplierModal({ show: true, initialData: s })}
-          onDeleteSupplier={handleDeleteSupplier}
-        />
-      )
-      case 'budgets': return (
-        <BudgetsView
-          budgets={budgets}
-          transactions={transactions}
-          onAddBudget={() => setBudgetModal({ show: true, initialData: null })}
-          onEditBudget={(b) => setBudgetModal({ show: true, initialData: b })}
-          onDeleteBudget={handleDeleteBudget}
-        />
-      )
-      default: return <DashboardView stats={stats} chartData={chartData} budgets={budgets} transactions={transactions} sales={dailySales} />
+      default: return <DashboardView stats={stats} chartData={chartData} transactions={transactions} sales={dailySales} />
     }
   }
 
@@ -310,7 +280,6 @@ function App() {
       case 'transactions': return 'Gastos y Compras'
       case 'employees': return 'Gestión de Empleados'
       case 'suppliers': return 'Proveedores'
-      case 'budgets': return 'Presupuestos y Metas'
       default: return ''
     }
   }
@@ -408,12 +377,6 @@ function App() {
             active={activeTab === 'suppliers'}
             onClick={() => { setActiveTab('suppliers'); setIsSidebarOpen(false); }}
           />
-          <NavItem
-            icon={<Target size={20} />}
-            label="Metas Sales"
-            active={activeTab === 'budgets'}
-            onClick={() => { setActiveTab('budgets'); setIsSidebarOpen(false); }}
-          />
         </nav>
       </aside>
 
@@ -459,7 +422,7 @@ function App() {
               {(activeTab === 'sales' || activeTab === 'transactions' || activeTab === 'employees' || activeTab === 'suppliers' || activeTab === 'budgets') && (
                 <button
                   onClick={() => {
-                    const exportData = activeTab === 'sales' ? dailySales : activeTab === 'transactions' ? filteredTransactions : activeTab === 'employees' ? filteredEmployees : activeTab === 'suppliers' ? filteredSuppliers : budgets
+                    const exportData = activeTab === 'sales' ? dailySales : activeTab === 'transactions' ? filteredTransactions : activeTab === 'employees' ? filteredEmployees : filteredSuppliers
                     exportToCSV(exportData, activeTab)
                   }}
                   className="desktop-only"
@@ -470,20 +433,6 @@ function App() {
                 </button>
               )}
 
-              <button
-                onClick={() => {
-                  if (activeTab === 'sales') setSalesModal({ show: true, initialData: null })
-                  else if (activeTab === 'employees') setEmployeeModal({ show: true, initialData: null })
-                  else if (activeTab === 'suppliers') setSupplierModal({ show: true, initialData: null })
-                  else if (activeTab === 'budgets') setBudgetModal({ show: true, initialData: null })
-                  else setShowForm(true)
-                }}
-                className="primary"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem' }}
-              >
-                <Plus size={20} />
-                <span className="desktop-only">{activeTab === 'sales' ? 'Nueva Caja' : activeTab === 'employees' ? 'Nuevo Empleado' : 'Añadir'}</span>
-              </button>
             </div>
           </div>
         </header>
@@ -520,15 +469,6 @@ function App() {
           onClose={() => setSupplierModal({ show: false, initialData: null })}
           onSave={handleSaveSupplier}
           initialData={supplierModal.initialData}
-        />
-      )}
-
-      {budgetModal.show && (
-        <BudgetModal
-          onClose={() => setBudgetModal({ show: false, initialData: null })}
-          onSave={handleSaveBudget}
-          categories={categories}
-          initialData={budgetModal.initialData}
         />
       )}
     </div>
