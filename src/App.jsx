@@ -30,7 +30,7 @@ import { SupplierModal } from './components/SupplierModal'
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [showForm, setShowForm] = useState(false)
+  const [transactionModal, setTransactionModal] = useState({ show: false, initialData: null })
   const [salesModal, setSalesModal] = useState({ show: false, initialData: null })
   const [employeeModal, setEmployeeModal] = useState({ show: false, initialData: null })
   const [supplierModal, setSupplierModal] = useState({ show: false, initialData: null })
@@ -64,6 +64,56 @@ function App() {
     }
   }, [isDarkMode])
 
+  const syncFixedExpenses = async (allTransactions) => {
+    if (!allTransactions) return false;
+    
+    const today = new Date();
+    const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    
+    const fixedExpenses = allTransactions.filter(t => t.type === 'expense' && t.expense_type === 'fixed');
+    if (fixedExpenses.length === 0) return false;
+    
+    const templates = {};
+    fixedExpenses.forEach(t => {
+      const key = `${t.description || ''}_${t.supplier_id || ''}_${t.amount || ''}_${t.category_id || ''}`;
+      if (!templates[key] || new Date(t.date) > new Date(templates[key].date)) {
+        templates[key] = t;
+      }
+    });
+
+    let newInserts = [];
+    Object.values(templates).forEach(template => {
+      const tDate = new Date(template.date);
+      const tMonthStr = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      const existsThisMonth = fixedExpenses.some(t => {
+        const d = new Date(t.date);
+        const mStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const key = `${t.description || ''}_${t.supplier_id || ''}_${t.amount || ''}_${t.category_id || ''}`;
+        const tKey = `${template.description || ''}_${template.supplier_id || ''}_${template.amount || ''}_${template.category_id || ''}`;
+        return mStr === currentMonthStr && key === tKey;
+      });
+
+      if (!existsThisMonth && tMonthStr !== currentMonthStr && new Date(tMonthStr) < today) {
+        newInserts.push({
+          type: 'expense',
+          expense_type: 'fixed',
+          amount: template.amount,
+          description: template.description,
+          category_id: template.category_id,
+          supplier_id: template.supplier_id,
+          date: new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0] // Día 1 del mes actual
+        });
+      }
+    });
+
+    if (newInserts.length > 0) {
+      const { error } = await supabase.from('super_transactions').insert(newInserts);
+      if (!error) return true;
+    }
+    return false;
+  }
+
   const fetchData = async () => {
     setLoading(true)
     try {
@@ -81,8 +131,19 @@ function App() {
         alert('Error al cargar datos de la base de datos.')
       }
 
+      let finalTransData = transData;
+      
+      // Sync fixed expenses and refetch if needed
+      if (finalTransData && await syncFixedExpenses(finalTransData)) {
+        const { data: updatedTrans } = await supabase
+          .from('super_transactions')
+          .select(`*, categories: category_id(*), super_suppliers: supplier_id(*)`)
+          .order('date', { ascending: false })
+        if (updatedTrans) finalTransData = updatedTrans;
+      }
+
       setCategories(catData || [])
-      setTransactions(transData || [])
+      setTransactions(finalTransData || [])
       setSuppliers(suppData || [])
       setDailySales(salesData || [])
       setEmployees(empData || [])
@@ -184,12 +245,23 @@ function App() {
   }
 
   const handleSaveTransaction = async (formData) => {
-    const { error } = await supabase.from('super_transactions').insert([formData])
+    const isEditing = !!formData.id
+    const { error } = isEditing
+      ? await supabase.from('super_transactions').update(formData).eq('id', formData.id)
+      : await supabase.from('super_transactions').insert([formData])
+
     if (!error) {
-      setShowForm(false)
+      setTransactionModal({ show: false, initialData: null })
       fetchData()
     } else {
       alert('Error al guardar: ' + error.message)
+    }
+  }
+
+  const handleDeleteTransaction = async (id) => {
+    if (window.confirm('¿Seguro que quieres borrar este gasto?')) {
+      await supabase.from('super_transactions').delete().eq('id', id)
+      fetchData()
     }
   }
 
@@ -309,7 +381,14 @@ function App() {
           onDeleteSale={handleDeleteSale}
         />
       )
-      case 'transactions': return <TransactionsView transactions={filteredTransactions.filter(t => t.type === 'expense')} onAddTransaction={() => setShowForm(true)} />
+      case 'transactions': return (
+        <TransactionsView 
+          transactions={filteredTransactions.filter(t => t.type === 'expense')} 
+          onAddTransaction={() => setTransactionModal({ show: true, initialData: null })}
+          onEditTransaction={(t) => setTransactionModal({ show: true, initialData: t })}
+          onDeleteTransaction={handleDeleteTransaction}
+        />
+      )
       case 'employees': return (
         <EmployeesView
           employees={filteredEmployees}
@@ -509,12 +588,13 @@ function App() {
         {renderContent()}
       </main>
 
-      {showForm && (
+      {transactionModal.show && (
         <TransactionForm
-          onClose={() => setShowForm(false)}
+          onClose={() => setTransactionModal({ show: false, initialData: null })}
           onSave={handleSaveTransaction}
           categories={categories}
           suppliers={suppliers}
+          initialData={transactionModal.initialData}
           fixedType="expense"
         />
       )}
