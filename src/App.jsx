@@ -70,7 +70,7 @@ function App() {
       const { data: catData, error: catError } = await supabase.from('super_categories').select('*').order('name')
       const { data: transData, error: transError } = await supabase
         .from('super_transactions')
-        .select(`*, categories: category_id(*)`)
+        .select(`*, categories: category_id(*), super_suppliers: supplier_id(*)`)
         .order('date', { ascending: false })
       const { data: suppData, error: suppError } = await supabase.from('super_suppliers').select('*').order('name')
       const { data: salesData, error: salesError } = await supabase.from('super_daily_sales').select('*, super_employees(name)').order('date', { ascending: false })
@@ -321,6 +321,7 @@ function App() {
       case 'suppliers': return (
         <SuppliersView
           suppliers={filteredSuppliers}
+          transactions={transactions}
           onAddSupplier={() => setSupplierModal({ show: true, initialData: null })}
           onEditSupplier={(s) => setSupplierModal({ show: true, initialData: s })}
           onDeleteSupplier={handleDeleteSupplier}
@@ -513,6 +514,7 @@ function App() {
           onClose={() => setShowForm(false)}
           onSave={handleSaveTransaction}
           categories={categories}
+          suppliers={suppliers}
         />
       )}
 

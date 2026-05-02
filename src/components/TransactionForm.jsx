@@ -1,18 +1,23 @@
 import React, { useState } from 'react'
 import { X } from 'lucide-react'
 
-export function TransactionForm({ onClose, onSave, categories }) {
+export function TransactionForm({ onClose, onSave, categories, suppliers }) {
     const [formData, setFormData] = useState({
         amount: '',
         description: '',
         category_id: '',
+        supplier_id: '',
         type: 'expense',
         date: new Date().toISOString().split('T')[0]
     })
 
     const handleSubmit = (e) => {
         e.preventDefault()
-        onSave({ ...formData, amount: parseFloat(formData.amount) })
+        onSave({ 
+            ...formData, 
+            amount: parseFloat(formData.amount),
+            supplier_id: formData.type === 'expense' && formData.supplier_id ? formData.supplier_id : null
+        })
     }
 
     return (
@@ -101,6 +106,35 @@ export function TransactionForm({ onClose, onSave, categories }) {
                             placeholder="Ej. Compra de suministros"
                         />
                     </div>
+
+                    {formData.type === 'expense' && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Tipo de Gasto</label>
+                                <select
+                                    style={{ width: '100%', padding: '0.75rem', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'white' }}
+                                    value={formData.expense_type}
+                                    onChange={(e) => setFormData({ ...formData, expense_type: e.target.value })}
+                                >
+                                    <option value="variable">Variable</option>
+                                    <option value="fixed">Fijo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Proveedor (Opcional)</label>
+                                <select
+                                    style={{ width: '100%', padding: '0.75rem', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'white' }}
+                                    value={formData.supplier_id}
+                                    onChange={(e) => setFormData({ ...formData, supplier_id: e.target.value })}
+                                >
+                                    <option value="">Ninguno</option>
+                                    {suppliers && suppliers.map(supp => (
+                                        <option key={supp.id} value={supp.id}>{supp.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    )}
 
                     <div>
                         <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Fecha</label>

@@ -7,7 +7,10 @@ export function SupplierModal({ onClose, onSave, initialData }) {
         contact_name: '',
         email: '',
         phone: '',
-        address: ''
+        address: '',
+        bank_account: '',
+        payment_method: 'banco',
+        visit_day: 'Sin día fijo'
     })
 
     const handleSubmit = (e) => {
@@ -93,6 +96,49 @@ export function SupplierModal({ onClose, onSave, initialData }) {
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                             placeholder="Calle, Ciudad, CP"
                         />
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Cuenta Bancaria (IBAN)</label>
+                        <input
+                            type="text"
+                            style={{ width: '100%', padding: '0.75rem', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'white' }}
+                            value={formData.bank_account || ''}
+                            onChange={(e) => setFormData({ ...formData, bank_account: e.target.value })}
+                            placeholder="ES00 0000 0000 0000 0000"
+                        />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Método de Pago</label>
+                            <select
+                                style={{ width: '100%', padding: '0.75rem', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'white' }}
+                                value={formData.payment_method || 'banco'}
+                                onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                            >
+                                <option value="banco">Banco / Transferencia</option>
+                                <option value="efectivo">Efectivo</option>
+                                <option value="domiciliacion">Domiciliación</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Día de Visita</label>
+                            <select
+                                style={{ width: '100%', padding: '0.75rem', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'white' }}
+                                value={formData.visit_day || 'Sin día fijo'}
+                                onChange={(e) => setFormData({ ...formData, visit_day: e.target.value })}
+                            >
+                                <option value="Sin día fijo">Sin día fijo</option>
+                                <option value="Lunes">Lunes</option>
+                                <option value="Martes">Martes</option>
+                                <option value="Miércoles">Miércoles</option>
+                                <option value="Jueves">Jueves</option>
+                                <option value="Viernes">Viernes</option>
+                                <option value="Sábado">Sábado</option>
+                                <option value="Domingo">Domingo</option>
+                            </select>
+                        </div>
                     </div>
 
                     <button type="submit" className="primary" style={{ marginTop: '1rem', padding: '1rem' }}>
