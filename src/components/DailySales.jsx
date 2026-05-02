@@ -1,8 +1,44 @@
-import React from 'react'
-import { Plus, TrendingUp, Calendar, Edit2, Trash2, Clock, User, AlertTriangle } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { Plus, TrendingUp, Calendar, Edit2, Trash2, Clock, User, AlertTriangle, CreditCard, Banknote } from 'lucide-react'
 
 export function DailySalesView({ sales, onAddSale, onEditSale, onDeleteSale, employees }) {
-    const totalSales = sales.reduce((sum, s) => sum + Number(s.amount), 0)
+    const currentYear = new Date().getFullYear()
+    const [selectedYear, setSelectedYear] = useState(currentYear)
+    const [selectedMonth, setSelectedMonth] = useState('all')
+
+    const years = Array.from(new Set(sales.map(s => new Date(s.date).getFullYear()))).sort((a, b) => b - a)
+    if (!years.includes(currentYear)) years.unshift(currentYear)
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+    const filteredSales = useMemo(() => {
+        return sales.filter(s => {
+            const d = new Date(s.date)
+            const matchYear = d.getFullYear() === Number(selectedYear)
+            const matchMonth = selectedMonth === 'all' ? true : d.getMonth() === Number(selectedMonth)
+            return matchYear && matchMonth
+        })
+    }, [sales, selectedYear, selectedMonth])
+
+    const totalSales = filteredSales.reduce((sum, s) => sum + Number(s.amount), 0)
+    const totalCash = filteredSales.reduce((sum, s) => sum + (Number(s.cash_amount) || 0), 0)
+    const totalCard = filteredSales.reduce((sum, s) => sum + (Number(s.card_amount) || 0), 0)
+
+    const cashGlobalPct = totalSales > 0 ? Math.round((totalCash / totalSales) * 100) : 0
+    const cardGlobalPct = totalSales > 0 ? Math.round((totalCard / totalSales) * 100) : 0
+
+    const groupedSales = useMemo(() => {
+        const groups = {}
+        filteredSales.forEach(s => {
+            if (!groups[s.date]) groups[s.date] = { total: 0, items: [] }
+            groups[s.date].items.push(s)
+            groups[s.date].total += Number(s.amount)
+        })
+        // Sort items inside groups by shift: 'mañana' first, then 'tarde'
+        Object.values(groups).forEach(g => {
+            g.items.sort((a, b) => (a.shift === 'mañana' ? -1 : 1))
+        })
+        return Object.entries(groups).sort((a, b) => new Date(b[0]) - new Date(a[0]))
+    }, [filteredSales])
 
     const renderBreakdown = (s) => {
         const total = Number(s.amount) || 0;
@@ -27,25 +63,72 @@ export function DailySalesView({ sales, onAddSale, onEditSale, onDeleteSale, emp
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Cajas Diarias</h3>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Registro de ingresos por ventas y cuadres</p>
                 </div>
-                <button onClick={onAddSale} className="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Plus size={18} />
-                    Nueva Caja
-                </button>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <select
+                            value={selectedMonth}
+                            onChange={(e) => setSelectedMonth(e.target.value)}
+                            style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
+                        >
+                            <option value="all">Todo el año</option>
+                            {months.map((m, i) => (
+                                <option key={m} value={i}>{m}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(e.target.value)}
+                            style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
+                        >
+                            {years.map(y => (
+                                <option key={y} value={y}>{y}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <button onClick={onAddSale} className="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Plus size={18} />
+                        Nueva Caja
+                    </button>
+                </div>
             </div>
 
-            {/* Summary Card */}
-            <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'var(--primary)', color: 'white' }}>
-                <div style={{ width: '56px', height: '56px', background: 'rgba(255,255,255,0.2)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <TrendingUp size={32} />
+            {/* Summary Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'var(--primary)', color: 'white' }}>
+                    <div style={{ width: '56px', height: '56px', background: 'rgba(255,255,255,0.2)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <TrendingUp size={32} />
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '0.875rem', opacity: 0.9 }}>Ventas del Periodo</p>
+                        <h2 style={{ fontSize: '2rem', fontWeight: 700 }}>{totalSales.toLocaleString()}€</h2>
+                    </div>
                 </div>
-                <div>
-                    <p style={{ fontSize: '0.875rem', opacity: 0.9 }}>Total Ventas (Periodo)</p>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 700 }}>{totalSales.toLocaleString()}€</h2>
+
+                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    <div style={{ width: '56px', height: '56px', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Banknote size={32} />
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>En Efectivo</p>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{totalCash.toLocaleString()}€</h2>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600 }}>{cashGlobalPct}% del total desglosado</p>
+                    </div>
+                </div>
+
+                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    <div style={{ width: '56px', height: '56px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <CreditCard size={32} />
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>En Tarjeta</p>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{totalCard.toLocaleString()}€</h2>
+                        <p style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600 }}>{cardGlobalPct}% del total desglosado</p>
+                    </div>
                 </div>
             </div>
 
@@ -53,7 +136,7 @@ export function DailySalesView({ sales, onAddSale, onEditSale, onDeleteSale, emp
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
                     <thead>
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)', background: 'var(--surface-hover)' }}>
-                            <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Fecha y Turno</th>
+                            <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Turno</th>
                             <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Empleado</th>
                             <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Monto y Desglose</th>
                             <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Cuadre</th>
@@ -62,78 +145,94 @@ export function DailySalesView({ sales, onAddSale, onEditSale, onDeleteSale, emp
                         </tr>
                     </thead>
                     <tbody>
-                        {sales.length === 0 ? (
+                        {groupedSales.length === 0 ? (
                             <tr>
                                 <td colSpan="6" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                    No hay registros de caja todavía.
+                                    No hay registros de caja para este periodo.
                                 </td>
                             </tr>
                         ) : (
-                            sales.map(s => (
-                                <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                    <td style={{ padding: '1rem' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}>
-                                                <Calendar size={14} color="var(--primary)" />
-                                                {new Date(s.date).toLocaleDateString()}
-                                            </div>
-                                            {s.shift && (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
-                                                    <Clock size={12} /> {s.shift}
+                            groupedSales.map(([date, group]) => (
+                                <React.Fragment key={date}>
+                                    {/* Encabezado del Día */}
+                                    <tr style={{ background: 'var(--surface-hover)', borderBottom: '1px solid var(--border)' }}>
+                                        <td colSpan="6" style={{ padding: '0.75rem 1rem' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
+                                                    <Calendar size={16} color="var(--primary)" />
+                                                    {new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                                 </div>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td style={{ padding: '1rem' }}>
-                                        {s.super_employees?.name ? (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                                <User size={14} color="var(--text-muted)" />
-                                                {s.super_employees.name}
+                                                <div style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                                                    Total Día: {group.total.toLocaleString()}€
+                                                </div>
                                             </div>
-                                        ) : (
-                                            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>-</span>
-                                        )}
-                                    </td>
-                                    <td style={{ padding: '1rem' }}>
-                                        <div style={{ fontWeight: 600, color: 'var(--success)' }}>
-                                            {Number(s.amount).toLocaleString()}€
-                                        </div>
-                                        {renderBreakdown(s)}
-                                    </td>
-                                    <td style={{ padding: '1rem' }}>
-                                        {Number(s.difference) !== 0 ? (
-                                            <div style={{ 
-                                                display: 'inline-flex', 
-                                                alignItems: 'center', 
-                                                gap: '0.25rem', 
-                                                padding: '0.25rem 0.5rem', 
-                                                borderRadius: '999px', 
-                                                fontSize: '0.75rem', 
-                                                fontWeight: 600,
-                                                backgroundColor: Number(s.difference) > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                                color: Number(s.difference) > 0 ? 'var(--success)' : 'var(--danger)'
-                                            }}>
-                                                <AlertTriangle size={12} />
-                                                {Number(s.difference) > 0 ? `Sobró ${s.difference}€` : `Faltó ${Math.abs(s.difference)}€`}
-                                            </div>
-                                        ) : (
-                                            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>OK</span>
-                                        )}
-                                    </td>
-                                    <td style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        {s.notes || '-'}
-                                    </td>
-                                    <td style={{ padding: '1rem', textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                            <button onClick={() => onEditSale(s)} style={{ padding: '0.4rem', background: 'transparent', color: 'var(--text-muted)' }}>
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button onClick={() => { if (confirm('¿Seguro?')) onDeleteSale(s.id) }} style={{ padding: '0.4rem', background: 'transparent', color: 'var(--danger)' }}>
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        </td>
+                                    </tr>
+                                    
+                                    {/* Cajas del Día */}
+                                    {group.items.map(s => (
+                                        <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                            <td style={{ padding: '1rem 1rem 1rem 2.5rem' }}>
+                                                {s.shift ? (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 500, textTransform: 'capitalize' }}>
+                                                        <Clock size={14} color="var(--text-muted)" /> {s.shift}
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Única</span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '1rem' }}>
+                                                {s.super_employees?.name ? (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                                                        <User size={14} color="var(--text-muted)" />
+                                                        {s.super_employees.name}
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>-</span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '1rem' }}>
+                                                <div style={{ fontWeight: 600, color: 'var(--success)' }}>
+                                                    {Number(s.amount).toLocaleString()}€
+                                                </div>
+                                                {renderBreakdown(s)}
+                                            </td>
+                                            <td style={{ padding: '1rem' }}>
+                                                {Number(s.difference) !== 0 ? (
+                                                    <div style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.25rem',
+                                                        padding: '0.25rem 0.5rem',
+                                                        borderRadius: '999px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600,
+                                                        backgroundColor: Number(s.difference) > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                        color: Number(s.difference) > 0 ? 'var(--success)' : 'var(--danger)'
+                                                    }}>
+                                                        <AlertTriangle size={12} />
+                                                        {Number(s.difference) > 0 ? `Sobró ${s.difference}€` : `Faltó ${Math.abs(s.difference)}€`}
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>OK</span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {s.notes || '-'}
+                                            </td>
+                                            <td style={{ padding: '1rem', textAlign: 'right' }}>
+                                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                                    <button onClick={() => onEditSale(s)} style={{ padding: '0.4rem', background: 'transparent', color: 'var(--text-muted)' }}>
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button onClick={() => { if (confirm('¿Seguro?')) onDeleteSale(s.id) }} style={{ padding: '0.4rem', background: 'transparent', color: 'var(--danger)' }}>
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </React.Fragment>
                             ))
                         )}
                     </tbody>
