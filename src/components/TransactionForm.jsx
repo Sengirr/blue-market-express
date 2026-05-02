@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
 import { X } from 'lucide-react'
 
-export function TransactionForm({ onClose, onSave, categories, suppliers }) {
+export function TransactionForm({ onClose, onSave, categories, suppliers, fixedType }) {
     const [formData, setFormData] = useState({
         amount: '',
         description: '',
         category_id: '',
         supplier_id: '',
-        type: 'expense',
+        expense_type: 'variable',
+        type: fixedType || 'expense',
         date: new Date().toISOString().split('T')[0]
     })
 
@@ -16,7 +17,8 @@ export function TransactionForm({ onClose, onSave, categories, suppliers }) {
         onSave({ 
             ...formData, 
             amount: parseFloat(formData.amount),
-            supplier_id: formData.type === 'expense' && formData.supplier_id ? formData.supplier_id : null
+            supplier_id: formData.type === 'expense' && formData.supplier_id ? formData.supplier_id : null,
+            expense_type: formData.type === 'expense' ? formData.expense_type : null
         })
     }
 
@@ -36,40 +38,44 @@ export function TransactionForm({ onClose, onSave, categories, suppliers }) {
         }}>
             <div className="card glass-card" style={{ width: '400px', padding: '2rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Nueva Entrada</h3>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>
+                        {fixedType === 'expense' ? 'Nuevo Gasto' : fixedType === 'income' ? 'Nuevo Ingreso' : 'Nueva Entrada'}
+                    </h3>
                     <button onClick={onClose} style={{ background: 'transparent', color: 'var(--text-muted)' }}>
                         <X size={24} />
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                        <button
-                            type="button"
-                            className={formData.type === 'expense' ? 'primary' : ''}
-                            style={{
-                                backgroundColor: formData.type === 'expense' ? 'var(--danger)' : 'var(--surface)',
-                                color: formData.type === 'expense' ? 'white' : 'var(--text-muted)'
-                            }}
-                            onClick={() => setFormData({ ...formData, type: 'expense' })}
-                        >
-                            Gasto
-                        </button>
-                        <button
-                            type="button"
-                            className={formData.type === 'income' ? 'primary' : ''}
-                            style={{
-                                backgroundColor: formData.type === 'income' ? 'var(--success)' : 'var(--surface)',
-                                color: formData.type === 'income' ? 'white' : 'var(--text-muted)'
-                            }}
-                            onClick={() => setFormData({ ...formData, type: 'income' })}
-                        >
-                            Ingreso
-                        </button>
-                    </div>
+                    {!fixedType && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <button
+                                type="button"
+                                className={formData.type === 'expense' ? 'primary' : ''}
+                                style={{
+                                    backgroundColor: formData.type === 'expense' ? 'var(--danger)' : 'var(--surface)',
+                                    color: formData.type === 'expense' ? 'white' : 'var(--text-muted)'
+                                }}
+                                onClick={() => setFormData({ ...formData, type: 'expense' })}
+                            >
+                                Gasto
+                            </button>
+                            <button
+                                type="button"
+                                className={formData.type === 'income' ? 'primary' : ''}
+                                style={{
+                                    backgroundColor: formData.type === 'income' ? 'var(--success)' : 'var(--surface)',
+                                    color: formData.type === 'income' ? 'white' : 'var(--text-muted)'
+                                }}
+                                onClick={() => setFormData({ ...formData, type: 'income' })}
+                            >
+                                Ingreso
+                            </button>
+                        </div>
+                    )}
 
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Monto</label>
+                        <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Cantidad</label>
                         <input
                             required
                             type="number"

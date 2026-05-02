@@ -515,6 +515,7 @@ function App() {
           onSave={handleSaveTransaction}
           categories={categories}
           suppliers={suppliers}
+          fixedType="expense"
         />
       )}
 
