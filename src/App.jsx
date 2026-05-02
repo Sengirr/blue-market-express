@@ -73,7 +73,7 @@ function App() {
         .select(`*, categories: category_id(*)`)
         .order('date', { ascending: false })
       const { data: suppData, error: suppError } = await supabase.from('super_suppliers').select('*').order('name')
-      const { data: salesData, error: salesError } = await supabase.from('super_daily_sales').select('*').order('date', { ascending: false })
+      const { data: salesData, error: salesError } = await supabase.from('super_daily_sales').select('*, super_employees(name)').order('date', { ascending: false })
       const { data: empData, error: empError } = await supabase.from('super_employees').select('*').order('name')
 
       if (catError || transError || suppError || salesError || empError) {
@@ -303,6 +303,7 @@ function App() {
       case 'sales': return (
         <DailySalesView
           sales={dailySales}
+          employees={employees}
           onAddSale={() => setSalesModal({ show: true, initialData: null })}
           onEditSale={(s) => setSalesModal({ show: true, initialData: s })}
           onDeleteSale={handleDeleteSale}
@@ -520,6 +521,7 @@ function App() {
           onClose={() => setSalesModal({ show: false, initialData: null })}
           onSave={handleSaveSale}
           initialData={salesModal.initialData}
+          employees={employees}
         />
       )}
 
