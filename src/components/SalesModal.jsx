@@ -34,8 +34,7 @@ export function SalesModal({ onClose, onSave, initialData, employees }) {
             if (formData.difference_type === 'faltante') diffValue = -diffValue;
         }
 
-        onSave({
-            id: initialData?.id,
+        const payload = {
             date: formData.date,
             shift: formData.shift,
             employee_id: formData.employee_id || null,
@@ -44,7 +43,13 @@ export function SalesModal({ onClose, onSave, initialData, employees }) {
             amount: parseFloat(formData.amount) || 0,
             difference: diffValue,
             notes: formData.notes
-        })
+        }
+
+        if (initialData?.id) {
+            payload.id = initialData.id
+        }
+
+        onSave(payload)
     }
 
     return (
