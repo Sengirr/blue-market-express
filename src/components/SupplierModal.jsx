@@ -10,7 +10,8 @@ export function SupplierModal({ onClose, onSave, initialData }) {
         address: '',
         bank_account: '',
         payment_method: 'banco',
-        visit_day: 'Sin día fijo'
+        visit_day: 'Sin día fijo',
+        supplier_type: ''
     })
 
     const handleSubmit = (e) => {
@@ -61,6 +62,17 @@ export function SupplierModal({ onClose, onSave, initialData }) {
                             value={formData.contact_name}
                             onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
                             placeholder="Ej. Juan Pérez"
+                        />
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Tipo de Proveedor / Servicio</label>
+                        <input
+                            type="text"
+                            style={{ width: '100%', padding: '0.75rem', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'white' }}
+                            value={formData.supplier_type || ''}
+                            onChange={(e) => setFormData({ ...formData, supplier_type: e.target.value })}
+                            placeholder="Ej. Bebidas, Limpieza, Mantenimiento..."
                         />
                     </div>
 

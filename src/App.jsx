@@ -309,7 +309,7 @@ function App() {
           onDeleteSale={handleDeleteSale}
         />
       )
-      case 'transactions': return <TransactionsView transactions={filteredTransactions.filter(t => t.type === 'expense')} />
+      case 'transactions': return <TransactionsView transactions={filteredTransactions.filter(t => t.type === 'expense')} onAddTransaction={() => setShowForm(true)} />
       case 'employees': return (
         <EmployeesView
           employees={filteredEmployees}

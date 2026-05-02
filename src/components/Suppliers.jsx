@@ -172,8 +172,15 @@ export function SuppliersView({ suppliers, transactions, onAddSupplier, onEditSu
                                     <div style={{ padding: '1rem', background: 'var(--surface-hover)', borderRadius: '12px' }}>
                                         <Users size={24} color="var(--primary)" />
                                     </div>
-                                    <div>
-                                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{s.name}</h3>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{s.name}</h3>
+                                            {s.supplier_type && (
+                                                <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', borderRadius: '12px', fontWeight: 600 }}>
+                                                    {s.supplier_type}
+                                                </span>
+                                            )}
+                                        </div>
                                         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{s.contact_name || 'Sin contacto'}</p>
                                     </div>
                                 </div>

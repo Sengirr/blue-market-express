@@ -1,11 +1,17 @@
-import React from 'react'
+import { Plus } from 'lucide-react'
 
-export function TransactionsView({ transactions }) {
+export function TransactionsView({ transactions, onAddTransaction }) {
     return (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Historial de Gastos</h3>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Registro detallado de salidas de dinero</p>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Historial de Gastos</h3>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Registro detallado de salidas de dinero</p>
+                </div>
+                <button onClick={onAddTransaction} className="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}>
+                    <Plus size={18} />
+                    Nuevo Gasto
+                </button>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
