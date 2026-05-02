@@ -157,7 +157,7 @@ export function SalesModal({ onClose, onSave, initialData, employees }) {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-muted)' }}>Monto Total</label>
+                        <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-muted)' }}>Importe Total</label>
                         <div style={{ position: 'relative' }}>
                             <Euro size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
                             <input

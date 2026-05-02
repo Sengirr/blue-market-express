@@ -135,7 +135,7 @@ export function DailySalesView({ sales, onAddSale, onEditSale, onDeleteSale, emp
                     <div>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>En Efectivo</p>
                         <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{totalCash.toLocaleString()}€</h2>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600 }}>{cashGlobalPct}% del desglose</p>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600 }}>{cashGlobalPct}% del total</p>
                     </div>
                 </div>
 
@@ -146,7 +146,7 @@ export function DailySalesView({ sales, onAddSale, onEditSale, onDeleteSale, emp
                     <div>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>En Tarjeta</p>
                         <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{totalCard.toLocaleString()}€</h2>
-                        <p style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600 }}>{cardGlobalPct}% del desglose</p>
+                        <p style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600 }}>{cardGlobalPct}% del total</p>
                     </div>
                 </div>
 
@@ -172,7 +172,7 @@ export function DailySalesView({ sales, onAddSale, onEditSale, onDeleteSale, emp
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)', background: 'var(--surface-hover)' }}>
                             <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Turno</th>
                             <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Empleado</th>
-                            <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Monto y Desglose</th>
+                            <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Importe y Desglose</th>
                             <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Cuadre</th>
                             <th style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Notas</th>
                             <th style={{ padding: '1rem', textAlign: 'right' }}>Acciones</th>
