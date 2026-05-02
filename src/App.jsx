@@ -67,14 +67,14 @@ function App() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const { data: catData, error: catError } = await supabase.from('categories').select('*').order('name')
+      const { data: catData, error: catError } = await supabase.from('super_categories').select('*').order('name')
       const { data: transData, error: transError } = await supabase
-        .from('transactions')
+        .from('super_transactions')
         .select(`*, categories: category_id(*)`)
         .order('date', { ascending: false })
-      const { data: suppData, error: suppError } = await supabase.from('suppliers').select('*').order('name')
-      const { data: salesData, error: salesError } = await supabase.from('daily_sales').select('*').order('date', { ascending: false })
-      const { data: empData, error: empError } = await supabase.from('employees').select('*').order('name')
+      const { data: suppData, error: suppError } = await supabase.from('super_suppliers').select('*').order('name')
+      const { data: salesData, error: salesError } = await supabase.from('super_daily_sales').select('*').order('date', { ascending: false })
+      const { data: empData, error: empError } = await supabase.from('super_employees').select('*').order('name')
 
       if (catError || transError || suppError || salesError || empError) {
         console.error('Error fetching data:', { catError, transError, suppError, salesError, empError })
@@ -184,7 +184,7 @@ function App() {
   }
 
   const handleSaveTransaction = async (formData) => {
-    const { error } = await supabase.from('transactions').insert([formData])
+    const { error } = await supabase.from('super_transactions').insert([formData])
     if (!error) {
       setShowForm(false)
       fetchData()
@@ -196,8 +196,8 @@ function App() {
   const handleSaveSale = async (formData) => {
     const isEditing = !!formData.id
     const { error } = isEditing
-      ? await supabase.from('daily_sales').update(formData).eq('id', formData.id)
-      : await supabase.from('daily_sales').insert([formData])
+      ? await supabase.from('super_daily_sales').update(formData).eq('id', formData.id)
+      : await supabase.from('super_daily_sales').insert([formData])
 
     if (error) {
       alert('Error saving sale: ' + error.message)
@@ -210,15 +210,15 @@ function App() {
   }
 
   const handleDeleteSale = async (id) => {
-    await supabase.from('daily_sales').delete().eq('id', id)
+    await supabase.from('super_daily_sales').delete().eq('id', id)
     fetchData()
   }
 
   const handleSaveEmployee = async (formData) => {
     const isEditing = !!formData.id
     const { error } = isEditing
-      ? await supabase.from('employees').update(formData).eq('id', formData.id)
-      : await supabase.from('employees').insert([formData])
+      ? await supabase.from('super_employees').update(formData).eq('id', formData.id)
+      : await supabase.from('super_employees').insert([formData])
 
     if (error) {
       alert('Error saving employee: ' + error.message)
@@ -231,23 +231,23 @@ function App() {
   }
 
   const handleDeleteEmployee = async (id) => {
-    await supabase.from('employees').delete().eq('id', id)
+    await supabase.from('super_employees').delete().eq('id', id)
     fetchData()
   }
 
   const handleSaveSupplier = async (formData) => {
     const isEditing = !!formData.id
     if (isEditing) {
-      await supabase.from('suppliers').update(formData).eq('id', formData.id)
+      await supabase.from('super_suppliers').update(formData).eq('id', formData.id)
     } else {
-      await supabase.from('suppliers').insert([formData])
+      await supabase.from('super_suppliers').insert([formData])
     }
     setSupplierModal({ show: false, initialData: null })
     fetchData()
   }
 
   const handleDeleteSupplier = async (id) => {
-    await supabase.from('suppliers').delete().eq('id', id)
+    await supabase.from('super_suppliers').delete().eq('id', id)
     fetchData()
   }
 
