@@ -26,6 +26,25 @@ export function DailySalesView({ sales, onAddSale, onEditSale, onDeleteSale, emp
     const cashGlobalPct = totalSales > 0 ? Math.round((totalCash / totalSales) * 100) : 0
     const cardGlobalPct = totalSales > 0 ? Math.round((totalCard / totalSales) * 100) : 0
 
+    // Calcular descuadres por empleado
+    const worstEmployee = useMemo(() => {
+        const diffs = {}
+        filteredSales.forEach(s => {
+            const diff = Math.abs(Number(s.difference) || 0)
+            if (diff > 0 && s.super_employees?.name) {
+                const name = s.super_employees.name
+                if (!diffs[name]) diffs[name] = { name, count: 0, total: 0 }
+                diffs[name].count += 1
+                diffs[name].total += diff
+            }
+        })
+        let worst = null
+        Object.values(diffs).forEach(emp => {
+            if (!worst || emp.total > worst.total) worst = emp
+        })
+        return worst
+    }, [filteredSales])
+
     const groupedSales = useMemo(() => {
         const groups = {}
         filteredSales.forEach(s => {
@@ -98,36 +117,51 @@ export function DailySalesView({ sales, onAddSale, onEditSale, onDeleteSale, emp
             </div>
 
             {/* Summary Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'var(--primary)', color: 'white' }}>
-                    <div style={{ width: '56px', height: '56px', background: 'rgba(255,255,255,0.2)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <TrendingUp size={32} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--primary)', color: 'white' }}>
+                    <div style={{ width: '48px', height: '48px', background: 'rgba(255,255,255,0.2)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <TrendingUp size={24} />
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.875rem', opacity: 0.9 }}>Ventas del Periodo</p>
-                        <h2 style={{ fontSize: '2rem', fontWeight: 700 }}>{totalSales.toLocaleString()}€</h2>
+                        <p style={{ fontSize: '0.75rem', opacity: 0.9 }}>Ventas del Periodo</p>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{totalSales.toLocaleString()}€</h2>
                     </div>
                 </div>
 
-                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                    <div style={{ width: '56px', height: '56px', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Banknote size={32} />
+                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ width: '48px', height: '48px', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Banknote size={24} />
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>En Efectivo</p>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{totalCash.toLocaleString()}€</h2>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600 }}>{cashGlobalPct}% del total desglosado</p>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>En Efectivo</p>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{totalCash.toLocaleString()}€</h2>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600 }}>{cashGlobalPct}% del desglose</p>
                     </div>
                 </div>
 
-                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                    <div style={{ width: '56px', height: '56px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <CreditCard size={32} />
+                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ width: '48px', height: '48px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <CreditCard size={24} />
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>En Tarjeta</p>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{totalCard.toLocaleString()}€</h2>
-                        <p style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600 }}>{cardGlobalPct}% del total desglosado</p>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>En Tarjeta</p>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{totalCard.toLocaleString()}€</h2>
+                        <p style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600 }}>{cardGlobalPct}% del desglose</p>
+                    </div>
+                </div>
+
+                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ width: '48px', height: '48px', background: worstEmployee ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: worstEmployee ? 'var(--danger)' : 'var(--success)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <AlertTriangle size={24} />
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{worstEmployee ? 'Mayor Descuadre' : 'Cuadres'}</p>
+                        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: worstEmployee ? 'var(--danger)' : 'var(--success)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {worstEmployee ? worstEmployee.name : 'Perfectos'}
+                        </h2>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {worstEmployee ? `${worstEmployee.total.toLocaleString()}€ en ${worstEmployee.count} cajas` : '0 descuadres'}
+                        </p>
                     </div>
                 </div>
             </div>
